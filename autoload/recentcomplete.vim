@@ -3,13 +3,14 @@ function! s:git_diff(args)
 endfunction
 
 function! s:buffer_contents()
-  if &fileformat ==# "dos"
-    let eol = "\r\n"
-  elseif &fileformat ==# "mac"
-    let eol = "\r"
-  else
-    let eol = "\n"
-  endif
+  " if &fileformat ==# "dos"
+  "   let eol = "\r\n"
+  " elseif &fileformat ==# "mac"
+  "   let eol = "\r"
+  " else
+  "   let eol = "\n"
+  " endif
+  let eol = "\n"
   return join(getbufline(bufname('%'), 1, '$'), eol) . eol
 endfunction
 
@@ -31,11 +32,15 @@ function! s:extract_keywords_from_diff(diff)
   return split(substitute(join(l:lines), '\k\@!.', ' ', 'g'))
 endfunction
 
+function! s:shellescape(str)
+  return escape(a:str, '''\')
+endfunction
+
 function! s:buffer_keywords()
   if !filereadable(expand('%'))
     return []
   endif
-  let l:diff = system("echo ".shellescape(s:buffer_contents())." | ".s:git_diff('--no-index -- '.expand('%').' -'))
+  let l:diff = s:run_command("echo '".s:shellescape(s:buffer_contents())."' | ".s:git_diff('--no-index -- '.expand('%').' -'))
   return s:extract_keywords_from_diff(l:diff)
 endfunction
 
