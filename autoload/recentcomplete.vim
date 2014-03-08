@@ -1,5 +1,5 @@
 function! s:git_diff(args)
-  return " git diff --diff-filter=AM --no-color ".a:args." 2>/dev/null | grep \\^+ 2>/dev/null | grep -v '+++ [ab]/' 2>/dev/null "
+  return " git diff --diff-filter=AM --no-color ".a:args." 2>/dev/null | grep \\^+ 2>/dev/null | grep -v '+++ [ab]/' 2>/dev/null || true"
 endfunction
 
 function! s:buffer_contents()
@@ -42,20 +42,20 @@ endfunction
 function! s:untracked_keywords()
   "echom 'git ls-files --others --exclude-standard 2>/dev/null | xargs -I % '.s:git_diff('git diff /dev/null %')
   " echom 'git ls-files --others --exclude-standard | xargs -I % '.s:git_diff('--no-index /dev/null %')
-  let l:diff = system('git ls-files --others --exclude-standard | xargs -I % '.s:git_diff('--no-index /dev/null %'))
+  let l:diff = s:run_command('git ls-files --others --exclude-standard | xargs -I % '.s:git_diff('--no-index /dev/null %'))
   "echom l:diff
   return s:extract_keywords_from_diff(l:diff)
 endfunction
 
 function! s:uncommitted_keywords()
-  let l:diff = system(s:git_diff('HEAD'))
+  let l:diff = s:run_command(s:git_diff('HEAD'))
   return s:extract_keywords_from_diff(l:diff)
 endfunction
 
 let s:commit_cache = {}
 
 function! s:recently_committed_keywords()
-  let l:head = system("git rev-parse HEAD")
+  let l:head = s:run_command("git rev-parse HEAD")
   if has_key(s:commit_cache, l:head)
     return s:commit_cache[l:head]
   endif
@@ -65,7 +65,7 @@ function! s:recently_committed_keywords()
   " git log --after="30 minutes ago" --format=%H
   " Then for each:
   " git show --pretty=format: --no-color <SHA>
-  let l:diff = system(s:git_diff("@'{8.hours.ago}'"))
+  let l:diff = s:run_command(s:git_diff("@'{8.hours.ago}'"))
   let l:diff = join(reverse(split(l:diff, '\n')), "\n")
   let l:result = s:extract_keywords_from_diff(l:diff)
   let s:commit_cache[l:head] = l:result
@@ -82,6 +82,15 @@ function! s:matches(keyword_base)
   return filter(l:keywords, "v:val =~# '^".l:base."'")
 endfunction
 
+function! s:run_command(command)
+  RCPython import recentcomplete
+  RCPython recentcomplete.run_command()
+endfunction
+
+" function! s:run_command(command)
+"   return system(command)
+" endfunction
+
 function! recentcomplete#matches(find_start, keyword_base)
   if a:find_start
     return s:find_start()
@@ -89,3 +98,16 @@ function! recentcomplete#matches(find_start, keyword_base)
     return s:matches(a:keyword_base)
   endif
 endfunction
+
+if has('python')
+  command! -nargs=1 RCPython python <args>
+elseif has('python3')
+  command! -nargs=1 RCPython python3 <args>
+else
+  echoerr "No Python support found"
+end
+
+RCPython << PYTHON
+import sys, os, vim
+sys.path.insert(0, os.path.join(vim.eval("expand('<sfile>:p:h:h')"), 'pylibs'))
+PYTHON
