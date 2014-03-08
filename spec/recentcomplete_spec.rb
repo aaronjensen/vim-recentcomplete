@@ -20,6 +20,10 @@ end
 
 describe "recentcomplete#matches without git" do
   include MatchHelper
+  after do
+    vim.command("bwipeout!")
+  end
+
   it "includes unsaved keywords" do
     vim.edit 'foo.rb'
     vim.insert("hello\n")
