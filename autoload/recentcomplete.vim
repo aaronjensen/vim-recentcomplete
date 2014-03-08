@@ -82,7 +82,8 @@ endfunction
 function! s:matches(keyword_base)
   let l:keywords = s:buffer_keywords()
   let l:keywords += s:untracked_keywords()
-  let l:keywords += s:uncommitted_keywords()
+  " this is redundant, it is included by s:recently_committed_keywords
+  " let l:keywords += s:uncommitted_keywords()
   let l:keywords += s:recently_committed_keywords()
 
   let l:base = escape(a:keyword_base, '\\/.*$^~[]')
