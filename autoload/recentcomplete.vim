@@ -33,7 +33,7 @@ function! s:extract_keywords_from_diff(diff)
 endfunction
 
 function! s:shellescape(str)
-  return substitute(a:str, "'", '"''"', 'g')
+  return substitute(a:str, "'", "'\"'\"'", 'g')
 endfunction
 
 function! s:buffer_keywords()
