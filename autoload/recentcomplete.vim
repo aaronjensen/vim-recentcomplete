@@ -72,7 +72,7 @@ function! s:recently_committed_keywords()
   " git log --after="30 minutes ago" --format=%H
   " Then for each:
   " git show --pretty=format: --no-color <SHA>
-  let l:diff = s:run_command(s:git_diff("@'{1.hour.ago}'"))
+  let l:diff = s:run_command(s:git_diff("@'{1.hour.ago}' HEAD"))
   let l:diff = join(reverse(split(l:diff, '\n')), "\n")
   let l:result = s:extract_keywords_from_diff(l:diff)
   let s:commit_cache[l:head] = l:result
@@ -82,8 +82,7 @@ endfunction
 function! s:matches(keyword_base)
   let l:keywords = s:buffer_keywords()
   let l:keywords += s:untracked_keywords()
-  " this is redundant, it is included by s:recently_committed_keywords
-  " let l:keywords += s:uncommitted_keywords()
+  let l:keywords += s:uncommitted_keywords()
   let l:keywords += s:recently_committed_keywords()
 
   let l:base = escape(a:keyword_base, '\\/.*$^~[]')
