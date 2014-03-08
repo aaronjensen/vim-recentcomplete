@@ -1,3 +1,5 @@
+let s:max_buffer_size = 200000
+
 function! s:git_diff(args)
   return " git diff --diff-filter=AM --no-color ".a:args." 2>/dev/null | grep \\^+ 2>/dev/null | grep -v '+++ [ab]/' 2>/dev/null || true"
 endfunction
@@ -42,7 +44,9 @@ function! s:buffer_keywords()
     let l:base = expand('%')
   endif
 
-  let l:diff = s:run_command("echo '".s:shellescape(s:buffer_contents())."' | ".s:git_diff('--no-index -- '.l:base.' -'))
+  let l:buffer = strpart(s:buffer_contents(), 0, s:max_buffer_size)
+
+  let l:diff = s:run_command("echo '".s:shellescape(l:buffer)."' | ".s:git_diff('--no-index -- '.l:base.' -'))
   return s:extract_keywords_from_diff(l:diff)
 endfunction
 
