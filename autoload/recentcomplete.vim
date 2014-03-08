@@ -37,10 +37,12 @@ function! s:shellescape(str)
 endfunction
 
 function! s:buffer_keywords()
-  if !filereadable(expand('%'))
-    return []
+  let l:base = '/dev/null'
+  if filereadable(expand('%'))
+    let l:base = expand('%')
   endif
-  let l:diff = s:run_command("echo '".s:shellescape(s:buffer_contents())."' | ".s:git_diff('--no-index -- '.expand('%').' -'))
+
+  let l:diff = s:run_command("echo '".s:shellescape(s:buffer_contents())."' | ".s:git_diff('--no-index -- '.l:base.' -'))
   return s:extract_keywords_from_diff(l:diff)
 endfunction
 
