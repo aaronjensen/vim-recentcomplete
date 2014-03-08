@@ -49,7 +49,7 @@ endfunction
 function! s:untracked_keywords()
   "echom 'git ls-files --others --exclude-standard 2>/dev/null | xargs -I % '.s:git_diff('git diff /dev/null %')
   " echom 'git ls-files --others --exclude-standard | xargs -I % '.s:git_diff('--no-index /dev/null %')
-  let l:diff = s:run_command('git ls-files --others --exclude-standard | xargs -I % '.s:git_diff('--no-index /dev/null %'))
+  let l:diff = s:run_command('git ls-files --others --exclude-standard 2>/dev/null | xargs -I % '.s:git_diff('--no-index /dev/null %'))
   "echom l:diff
   return s:extract_keywords_from_diff(l:diff)
 endfunction
@@ -62,7 +62,7 @@ endfunction
 let s:commit_cache = {}
 
 function! s:recently_committed_keywords()
-  let l:head = s:run_command("git rev-parse HEAD")
+  let l:head = s:run_command("git rev-parse HEAD 2>/dev/null || echo nogit")
   if has_key(s:commit_cache, l:head)
     return s:commit_cache[l:head]
   endif
