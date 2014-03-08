@@ -11,9 +11,9 @@ def echom(string):
 
 def run_command():
     command = vim.eval("a:command")
-    echom("")
-    echom("")
-    echom(command)
+    # echom("")
+    # echom("")
+    # echom(command)
     output = subprocess.check_output("%s" % (command), shell=True)
-    echom(output)
+    # echom(output)
     vim.command('return %s' % vim_str(output))
