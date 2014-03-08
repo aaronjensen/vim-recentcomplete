@@ -86,7 +86,9 @@ function! s:matches(keyword_base)
   let l:keywords += s:recently_committed_keywords()
 
   let l:base = escape(a:keyword_base, '\\/.*$^~[]')
-  return filter(l:keywords, "v:val =~# '^".l:base."'")
+  let l:result = filter(l:keywords, "v:val =~# '^".l:base."'")
+  call map(l:result, "{ 'word': v:val, 'menu': '~' }")
+  return l:result
 endfunction
 
 function! s:run_command(command)
