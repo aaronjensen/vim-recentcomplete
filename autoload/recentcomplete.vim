@@ -46,29 +46,26 @@ function! s:buffer_keywords()
 
   let l:buffer = strpart(s:buffer_contents(), 0, s:max_buffer_size)
 
-  let l:diff = s:run_command("echo '".s:shellescape(l:buffer)."' | ".s:git_diff('--no-index -- '.l:base.' -'))
-  return s:extract_keywords_from_diff(l:diff)
+  let l:command = "echo '".s:shellescape(l:buffer)."' | ".s:git_diff('--no-index -- '.l:base.' -')
+  return { 'command': l:command }
 endfunction
 
 function! s:untracked_keywords()
-  "echom 'git ls-files --others --exclude-standard 2>/dev/null | xargs -I % '.s:git_diff('git diff /dev/null %')
-  " echom 'git ls-files --others --exclude-standard | xargs -I % '.s:git_diff('--no-index /dev/null %')
-  let l:diff = s:run_command('git ls-files --others --exclude-standard 2>/dev/null | xargs -I % '.s:git_diff('--no-index /dev/null %'))
-  "echom l:diff
-  return s:extract_keywords_from_diff(l:diff)
+  let l:command = 'git ls-files --others --exclude-standard 2>/dev/null | xargs -I % '.s:git_diff('--no-index /dev/null %')
+  return { 'command': l:command }
 endfunction
 
 function! s:uncommitted_keywords()
-  let l:diff = s:run_command(s:git_diff('HEAD'))
-  return s:extract_keywords_from_diff(l:diff)
+  let l:command = s:git_diff('HEAD')
+  return { 'command': l:command }
 endfunction
 
 let s:commit_cache = {}
 
 function! s:recently_committed_keywords()
-  let l:head = s:run_command("git rev-parse HEAD 2>/dev/null || echo nogit")
+  let l:head = s:system("git rev-parse HEAD 2>/dev/null || echo nogit")
   if has_key(s:commit_cache, l:head)
-    return s:commit_cache[l:head]
+    return { 'result': s:commit_cache[l:head] }
   endif
 
   " TODO: cache, maybe one commit at a time
@@ -76,18 +73,49 @@ function! s:recently_committed_keywords()
   " git log --after="30 minutes ago" --format=%H
   " Then for each:
   " git show --pretty=format: --no-color <SHA>
-  let l:diff = s:run_command(s:git_diff("@'{1.hour.ago}' HEAD"))
-  let l:diff = join(reverse(split(l:diff, '\n')), "\n")
+  let l:command = s:git_diff("@'{1.hour.ago}' HEAD")
+  return { 'command': l:command, 'extract': '<SID>process_recently_committed_keywords' }
+endfunction
+
+function! s:process_recently_committed_keywords(diff) abort
+  let l:diff = join(reverse(split(a:diff, '\n')), "\n")
   let l:result = s:extract_keywords_from_diff(l:diff)
+
+  let l:head = s:system("git rev-parse HEAD 2>/dev/null || echo nogit")
   let s:commit_cache[l:head] = l:result
   return l:result
 endfunction
 
-function! s:matches(keyword_base)
-  let l:keywords = s:buffer_keywords()
-  let l:keywords += s:untracked_keywords()
-  let l:keywords += s:uncommitted_keywords()
-  let l:keywords += s:recently_committed_keywords()
+function! s:run_command(command) abort
+  if has_key(a:command, 'result')
+    return a:command.result
+  endif
+
+  let l:diff = s:system(a:command.command)
+  if has_key(a:command, 'extract')
+    return eval(a:command.extract . '(l:diff)')
+  endif
+
+  return s:extract_keywords_from_diff(l:diff)
+endfunction
+
+function! s:run_commands(commands) abort
+  let l:keywords = []
+  for l:command in a:commands
+    let l:keywords += s:run_command(l:command)
+  endfor
+  return l:keywords
+endfunction
+
+function! s:matches(keyword_base) abort
+  let l:commands = [
+        \   s:buffer_keywords(),
+        \   s:untracked_keywords(),
+        \   s:uncommitted_keywords(),
+        \   s:recently_committed_keywords(),
+        \ ]
+
+  let l:keywords = s:run_commands(l:commands)
 
   let l:base = escape(a:keyword_base, '\\/.*$^~[]')
   let l:result = filter(l:keywords, "v:val =~# '^".l:base."'")
@@ -95,7 +123,7 @@ function! s:matches(keyword_base)
   return l:result
 endfunction
 
-function! s:run_command(command)
+function! s:system(command) abort
   RCPython import recentcomplete
   RCPython recentcomplete.run_command()
 endfunction
@@ -104,7 +132,7 @@ endfunction
 "   return system(command)
 " endfunction
 
-function! recentcomplete#matches(find_start, keyword_base)
+function! recentcomplete#matches(find_start, keyword_base) abort
   if a:find_start
     return s:find_start()
   else
