@@ -1,4 +1,5 @@
 let s:max_buffer_size = 200000
+let s:max_untracked_files = 10
 
 function! s:git_diff(args)
   return " git diff --diff-filter=AM --no-color ".a:args." 2>/dev/null | grep \\^+ 2>/dev/null | grep -v '+++ [ab]/' 2>/dev/null || true"
@@ -51,7 +52,9 @@ function! s:buffer_keywords()
 endfunction
 
 function! s:untracked_keywords()
-  let l:command = 'git ls-files --others --exclude-standard 2>/dev/null | xargs -I % '.s:git_diff('--no-index /dev/null %')
+  let l:command = 'git ls-files --others --exclude-standard 2>/dev/null | head -'
+        \. s:max_untracked_files
+        \. ' | xargs -I % '.s:git_diff('--no-index /dev/null %')
   return { 'command': l:command }
 endfunction
 
