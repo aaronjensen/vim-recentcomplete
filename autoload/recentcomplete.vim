@@ -2,7 +2,10 @@ let s:max_buffer_size = 200000
 let s:max_untracked_files = 10
 
 function! s:git_diff(args)
-  return " git diff --diff-filter=AM --no-color ".a:args." 2>/dev/null | grep \\^+ 2>/dev/null | grep -v '+++ [ab]/' 2>/dev/null || true"
+  return " git diff --diff-filter=AM --no-color " . a:args ." 2>/dev/null"
+        \. " | grep \\^+\s*.. 2>/dev/null"
+        \. " | grep -v '+++ [ab]/' 2>/dev/null"
+        \. " || true"
 endfunction
 
 function! s:buffer_contents()
