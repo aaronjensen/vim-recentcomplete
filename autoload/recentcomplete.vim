@@ -1,10 +1,15 @@
 let s:max_buffer_size = 200000
 let s:max_untracked_files = 10
 
-function! s:git_diff(args)
+function! s:git_diff(args, ...)
+  let extra = ''
+  if a:0 > 0
+    let extra = a:1
+  endif
   return " git diff --diff-filter=AM --no-color " . a:args ." 2>/dev/null"
         \. " | grep \\^+\s*.. 2>/dev/null"
         \. " | grep -v '+++ [ab]/' 2>/dev/null"
+        \. extra
         \. " || true"
 endfunction
 
@@ -66,49 +71,22 @@ function! s:uncommitted_keywords()
   return { 'command': l:command }
 endfunction
 
-let s:commit_cache = {}
-
 function! s:recently_committed_keywords()
-  let l:head = s:system("git rev-parse HEAD 2>/dev/null || echo nogit")
-  if has_key(s:commit_cache, l:head)
-    return { 'result': s:commit_cache[l:head] }
-  endif
-
   " TODO: cache, maybe one commit at a time
   " To get commits:
   " git log --after="30 minutes ago" --format=%H
   " Then for each:
   " git show --pretty=format: --no-color <SHA>
-  let l:command = s:git_diff("@'{1.hour.ago}' HEAD")
-  return { 'command': l:command, 'extract': '<SID>process_recently_committed_keywords' }
+  let l:command = s:git_diff("@'{1.hour.ago}' HEAD", "| sed '1!G;h;$!d' 2>/dev/null")
+  return { 'command': l:command }
 endfunction
 
-function! s:process_recently_committed_keywords(diff) abort
-  let l:diff = join(reverse(split(a:diff, '\n')), "\n")
-  let l:result = s:extract_keywords_from_diff(l:diff)
+function! s:run_commands_in_parallel(commands) abort
+  let l:outputs = s:py_run_commands(map(copy(a:commands), "v:val.command"))
 
-  let l:head = s:system("git rev-parse HEAD 2>/dev/null || echo nogit")
-  let s:commit_cache[l:head] = l:result
-  return l:result
-endfunction
-
-function! s:run_command(command) abort
-  if has_key(a:command, 'result')
-    return a:command.result
-  endif
-
-  let l:diff = s:system(a:command.command)
-  if has_key(a:command, 'extract')
-    return eval(a:command.extract . '(l:diff)')
-  endif
-
-  return s:extract_keywords_from_diff(l:diff)
-endfunction
-
-function! s:run_commands(commands) abort
   let l:keywords = []
-  for l:command in a:commands
-    let l:keywords += s:run_command(l:command)
+  for l:output in l:outputs
+    let l:keywords += s:extract_keywords_from_diff(l:output)
   endfor
   return l:keywords
 endfunction
@@ -121,7 +99,7 @@ function! s:matches(keyword_base) abort
         \   s:recently_committed_keywords(),
         \ ]
 
-  let l:keywords = s:run_commands(l:commands)
+  let l:keywords = s:run_commands_in_parallel(l:commands)
 
   let l:base = escape(a:keyword_base, '\\/.*$^~[]')
   let l:result = filter(l:keywords, "v:val =~# '^".l:base."'")
@@ -129,14 +107,15 @@ function! s:matches(keyword_base) abort
   return l:result
 endfunction
 
-function! s:system(command) abort
+function! s:py_run_command(command) abort
   RCPython import recentcomplete
   RCPython recentcomplete.run_command()
 endfunction
 
-" function! s:run_command(command)
-"   return system(command)
-" endfunction
+function! s:py_run_commands(commands) abort
+  RCPython import recentcomplete
+  RCPython recentcomplete.run_commands()
+endfunction
 
 function! recentcomplete#matches(find_start, keyword_base) abort
   if a:find_start
@@ -158,3 +137,5 @@ RCPython << PYTHON
 import sys, os, vim
 sys.path.insert(0, os.path.join(vim.eval("expand('<sfile>:p:h:h')"), 'pylibs'))
 PYTHON
+
+call s:py_run_commands(['ls', 'echo hi'])
