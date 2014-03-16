@@ -55,34 +55,25 @@ function! s:buffer_keywords()
 
   let l:buffer = strpart(s:buffer_contents(), 0, s:max_buffer_size)
 
-  let l:command = "echo '".s:shellescape(l:buffer)."' | ".s:git_diff('--no-index -- '.l:base.' -')
-  return { 'command': l:command }
+  return "echo '".s:shellescape(l:buffer)."' | ".s:git_diff('--no-index -- '.l:base.' -')
 endfunction
 
 function! s:untracked_keywords()
-  let l:command = 'git ls-files --others --exclude-standard 2>/dev/null | head -'
+  return 'git ls-files --others --exclude-standard 2>/dev/null | head -'
         \. s:max_untracked_files
         \. ' | xargs -I % '.s:git_diff('--no-index /dev/null %')
-  return { 'command': l:command }
 endfunction
 
 function! s:uncommitted_keywords()
-  let l:command = s:git_diff('HEAD')
-  return { 'command': l:command }
+  return s:git_diff('HEAD')
 endfunction
 
 function! s:recently_committed_keywords()
-  " TODO: cache, maybe one commit at a time
-  " To get commits:
-  " git log --after="30 minutes ago" --format=%H
-  " Then for each:
-  " git show --pretty=format: --no-color <SHA>
-  let l:command = s:git_diff("@'{1.hour.ago}' HEAD", "| sed '1!G;h;$!d' 2>/dev/null")
-  return { 'command': l:command }
+  return s:git_diff("@'{1.hour.ago}' HEAD", "| sed '1!G;h;$!d' 2>/dev/null")
 endfunction
 
 function! s:run_commands_in_parallel(commands) abort
-  let l:outputs = s:py_run_commands(map(copy(a:commands), "v:val.command"))
+  let l:outputs = s:py_run_commands(a:commands)
 
   let l:keywords = []
   for l:output in l:outputs
