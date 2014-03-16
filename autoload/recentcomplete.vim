@@ -14,33 +14,26 @@ function! s:git_diff(args, ...)
 endfunction
 
 function! s:buffer_contents()
-  " if &fileformat ==# "dos"
-  "   let eol = "\r\n"
-  " elseif &fileformat ==# "mac"
-  "   let eol = "\r"
-  " else
-  "   let eol = "\n"
-  " endif
   let eol = "\n"
   return join(getbufline(bufname('%'), 1, '$'), eol) . eol
 endfunction
 
 function! s:find_start()
-  let l:line = getline('.')
-  let l:start = col('.') - 1
+  let line = getline('.')
+  let start = col('.') - 1
 
-  while l:start > 0 && l:line[l:start - 1] =~ '\k'
-    let l:start -= 1
+  while start > 0 && line[start - 1] =~ '\k'
+    let start -= 1
   endwhile
 
-  return l:start
+  return start
 endfunction
 
 function! s:extract_keywords_from_diff(diff)
-  let l:lines = filter(split(a:diff, "\n"), 'v:val =~# ''^+\(++ [ab]\)\@!''')
-  let l:lines = map(l:lines, 'strpart(v:val, 1)')
+  let lines = filter(split(a:diff, "\n"), 'v:val =~# ''^+\(++ [ab]\)\@!''')
+  let lines = map(lines, 'strpart(v:val, 1)')
 
-  return split(substitute(join(l:lines), '\k\@!.', ' ', 'g'))
+  return split(substitute(join(lines), '\k\@!.', ' ', 'g'))
 endfunction
 
 function! s:shellescape(str)
@@ -48,14 +41,14 @@ function! s:shellescape(str)
 endfunction
 
 function! s:buffer_keywords()
-  let l:base = '/dev/null'
+  let base = '/dev/null'
   if filereadable(expand('%'))
-    let l:base = expand('%')
+    let base = expand('%')
   endif
 
-  let l:buffer = strpart(s:buffer_contents(), 0, s:max_buffer_size)
+  let buffer = strpart(s:buffer_contents(), 0, s:max_buffer_size)
 
-  return "echo '".s:shellescape(l:buffer)."' | ".s:git_diff('--no-index -- '.l:base.' -')
+  return "echo '".s:shellescape(buffer)."' | ".s:git_diff('--no-index -- '.base.' -')
 endfunction
 
 function! s:untracked_keywords()
@@ -73,29 +66,29 @@ function! s:recently_committed_keywords()
 endfunction
 
 function! s:run_commands_in_parallel(commands) abort
-  let l:outputs = s:py_run_commands(a:commands)
+  let outputs = s:py_run_commands(a:commands)
 
-  let l:keywords = []
-  for l:output in l:outputs
-    let l:keywords += s:extract_keywords_from_diff(l:output)
+  let keywords = []
+  for output in outputs
+    let keywords += s:extract_keywords_from_diff(output)
   endfor
-  return l:keywords
+  return keywords
 endfunction
 
 function! s:matches(keyword_base) abort
-  let l:commands = [
+  let commands = [
         \   s:buffer_keywords(),
         \   s:untracked_keywords(),
         \   s:uncommitted_keywords(),
         \   s:recently_committed_keywords(),
         \ ]
 
-  let l:keywords = s:run_commands_in_parallel(l:commands)
+  let keywords = s:run_commands_in_parallel(commands)
 
-  let l:base = escape(a:keyword_base, '\\/.*$^~[]')
-  let l:result = filter(l:keywords, "v:val =~# '^".l:base."'")
-  call map(l:result, "{ 'word': v:val, 'menu': '~' }")
-  return l:result
+  let base = escape(a:keyword_base, '\\/.*$^~[]')
+  let result = filter(keywords, "v:val =~# '^".base."'")
+  call map(result, "{ 'word': v:val, 'menu': '~' }")
+  return result
 endfunction
 
 function! s:py_run_command(command) abort
