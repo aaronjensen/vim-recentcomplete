@@ -10,10 +10,10 @@ def vim_str(text):
 def echom(text):
     vim.command("echom %s" % vim_str(text))
 
+pool = ThreadPool(processes=4)
 def run_commands():
     commands = vim.eval("a:commands")
 
-    pool = ThreadPool(processes=4)
     results = pool.map(get_output, commands)
     outputs = [vim_str(result) for result in results]
 
