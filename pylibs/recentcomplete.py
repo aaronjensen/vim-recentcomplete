@@ -44,11 +44,11 @@ def update_cache_eventually():
     update_cache()
 
 
-cache = ''
+cache = []
 @debounce(0)
 @one_at_a_time()
 def update_cache():
-    return
+    cache = _run_commands(cacheable_commands)
 
 
 pool = ThreadPool(processes=4)
@@ -80,6 +80,7 @@ def git_diff(args, extra=""):
     return (" git diff --diff-filter=AM --no-color {} 2>/dev/null"
             " | grep \\^+\s*.. 2>/dev/null"
             " | grep -v '+++ [ab]/' 2>/dev/null"
+            " | sed 's/^+//' 2>/dev/null"
             "{}"
             " || true"
             ).format(args, extra)
@@ -98,7 +99,7 @@ def uncommitted_keywords():
 def recently_committed_keywords():
     return git_diff("@'{1.hour.ago}' HEAD", "| sed '1!G;h;$!d' 2>/dev/null")
 
-commands = [
+cacheable_commands = [
         untracked_keywords(),
         uncommitted_keywords(),
         recently_committed_keywords(),
