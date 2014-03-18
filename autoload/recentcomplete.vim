@@ -9,6 +9,7 @@ function! s:git_diff(args, ...)
   return " git diff --diff-filter=AM --no-color " . a:args ." 2>/dev/null"
         \. " | grep \\^+\s*.. 2>/dev/null"
         \. " | grep -v '+++ [ab]/' 2>/dev/null"
+        \. " | sed 's/^+//' 2>/dev/null"
         \. extra
         \. " || true"
 endfunction
@@ -30,10 +31,7 @@ function! s:find_start()
 endfunction
 
 function! s:extract_keywords_from_diff(diff)
-  let lines = split(a:diff, "\n")
-  let lines = map(lines, 'strpart(v:val, 1)')
-
-  return split(substitute(join(lines), '\k\@!.', ' ', 'g'))
+  return split(substitute(a:diff, '\k\@!.', ' ', 'g'))
 endfunction
 
 function! s:shellescape(str)
