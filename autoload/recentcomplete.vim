@@ -30,7 +30,7 @@ function! s:find_start()
 endfunction
 
 function! s:extract_keywords_from_diff(diff)
-  let lines = filter(split(a:diff, "\n"), 'v:val =~# ''^+\(++ [ab]\)\@!''')
+  let lines = split(a:diff, "\n")
   let lines = map(lines, 'strpart(v:val, 1)')
 
   return split(substitute(join(lines), '\k\@!.', ' ', 'g'))
