@@ -55,8 +55,7 @@ pool = ThreadPool(processes=4)
 def run_commands():
     commands = vim.eval("a:commands")
 
-    results = pool.map(get_output, commands)
-    outputs = [vim_str(result) for result in results]
+    outputs = _run_commands(commands)
 
     vim.command('return [%s]' % ','.join(outputs))
 
@@ -68,9 +67,42 @@ def run_command():
 
 
 # Support functions
+def _run_commands(commands):
+    results = pool.map(get_output, commands)
+    return [vim_str(result) for result in results]
+
+
 def get_output(command):
     return subprocess.check_output("%s" % (command), shell=True)
 
+
+def git_diff(args, extra=""):
+    return (" git diff --diff-filter=AM --no-color {} 2>/dev/null"
+            " | grep \\^+\s*.. 2>/dev/null"
+            " | grep -v '+++ [ab]/' 2>/dev/null"
+            "{}"
+            " || true"
+            ).format(args, extra)
+
+
+def untracked_keywords():
+    return ('git ls-files --others --exclude-standard 2>/dev/null'
+            ' | xargs -I % {}'
+            ).format(git_diff('--no-index /dev/null %'))
+
+
+def uncommitted_keywords():
+    return git_diff("HEAD")
+
+
+def recently_committed_keywords():
+    return git_diff("@'{1.hour.ago}' HEAD", "| sed '1!G;h;$!d' 2>/dev/null")
+
+commands = [
+        untracked_keywords(),
+        uncommitted_keywords(),
+        recently_committed_keywords(),
+        ]
 
 # Vim helpers
 def vim_str(text):
