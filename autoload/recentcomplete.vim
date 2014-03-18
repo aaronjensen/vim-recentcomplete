@@ -92,12 +92,10 @@ function! s:matches(keyword_base) abort
 endfunction
 
 function! s:py_run_command(command) abort
-  RCPython import recentcomplete
   RCPython recentcomplete.run_command()
 endfunction
 
 function! s:py_run_commands(commands) abort
-  RCPython import recentcomplete
   RCPython recentcomplete.run_commands()
 endfunction
 
@@ -107,6 +105,17 @@ function! recentcomplete#matches(find_start, keyword_base) abort
   else
     return s:matches(a:keyword_base)
   endif
+endfunction
+
+" debounces the cache update so we can use it on things like CursorMovedI.
+" will update the cache 2 seconds after the last time this was called.
+function! recentcomplete#update_cache_eventually() abort
+  RCPython recentcomplete.update_cache_eventually()
+endfunction
+
+" Updates the cache immediately, though in a background thread.
+function! recentcomplete#update_cache() abort
+  RCPython recentcomplete.update_cache()
 endfunction
 
 if has('python')
@@ -120,6 +129,7 @@ end
 RCPython << PYTHON
 import sys, os, vim
 sys.path.insert(0, os.path.join(vim.eval("expand('<sfile>:p:h:h')"), 'pylibs'))
+import recentcomplete
 PYTHON
 
 call s:py_run_commands(['ls', 'echo hi'])
