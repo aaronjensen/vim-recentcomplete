@@ -13,10 +13,12 @@ def debounce(wait):
     def decorator(fn):
         def debounced(*args, **kwargs):
             def call_it():
-                #debounce.timers.remove(debounced.t)
+                if debounced.t in debounce.timers:
+                    debounce.timers.remove(debounced.t)
                 fn(*args, **kwargs)
             try:
-                #debounce.timers.remove(debounced.t)
+                if debounced.t in debounce.timers:
+                    debounce.timers.remove(debounced.t)
                 debounced.t.cancel()
             except(AttributeError):
                 pass
