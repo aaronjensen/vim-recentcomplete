@@ -76,6 +76,10 @@ def clear_timers():
         debounce.timers.pop().cancel()
 
 
+def get_cache():
+    vim.command('return [%s]' % ','.join(cache))
+
+
 # Support functions
 def _run_commands(commands):
     results = pool.map(get_output, commands)

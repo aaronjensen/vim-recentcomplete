@@ -63,16 +63,6 @@ function! s:recently_committed_keywords()
   return s:git_diff("@'{1.hour.ago}' HEAD", "| sed '1!G;h;$!d' 2>/dev/null")
 endfunction
 
-function! s:run_commands_in_parallel(commands) abort
-  let outputs = s:py_run_commands(a:commands)
-
-  let keywords = []
-  for output in outputs
-    let keywords += s:extract_keywords_from_diff(output)
-  endfor
-  return keywords
-endfunction
-
 function! s:matches(keyword_base) abort
   let commands = [
         \   s:buffer_keywords(),
@@ -81,12 +71,18 @@ function! s:matches(keyword_base) abort
         \   s:recently_committed_keywords(),
         \ ]
 
-  let keywords = s:run_commands_in_parallel(commands)
+  let output = s:py_run_commands(commands)
+  let output += s:py_get_cache()
+  let keywords = s:extract_keywords_from_diff(join(output))
 
   let base = escape(a:keyword_base, '\\/.*$^~[]')
   let result = filter(keywords, "v:val =~# '^".base."'")
   call map(result, "{ 'word': v:val, 'menu': '~' }")
   return result
+endfunction
+
+function! s:py_get_cache() abort
+  RCPython recentcomplete.get_cache()
 endfunction
 
 function! s:py_run_command(command) abort
