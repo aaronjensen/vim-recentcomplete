@@ -1,6 +1,7 @@
 let s:max_buffer_size = 200000
 let s:max_untracked_files = 10
 
+" TODO: Get rid of this and move buffer_keywords to python
 function! s:git_diff(args, ...)
   let extra = ''
   if a:0 > 0
@@ -49,26 +50,9 @@ function! s:buffer_keywords()
   return "echo '".s:shellescape(buffer)."' | ".s:git_diff('--no-index -- '.base.' -')
 endfunction
 
-function! s:untracked_keywords()
-  return 'git ls-files --others --exclude-standard 2>/dev/null | head -'
-        \. s:max_untracked_files
-        \. ' | xargs -I % '.s:git_diff('--no-index /dev/null %')
-endfunction
-
-function! s:uncommitted_keywords()
-  return s:git_diff('HEAD')
-endfunction
-
-function! s:recently_committed_keywords()
-  return s:git_diff("@'{1.hour.ago}' HEAD", "| sed '1!G;h;$!d' 2>/dev/null")
-endfunction
-
 function! s:matches(keyword_base) abort
   let commands = [
         \   s:buffer_keywords(),
-        \   s:untracked_keywords(),
-        \   s:uncommitted_keywords(),
-        \   s:recently_committed_keywords(),
         \ ]
 
   let output = s:py_run_commands(commands)
@@ -101,14 +85,21 @@ function! recentcomplete#matches(find_start, keyword_base) abort
   endif
 endfunction
 
+" XXX: Too many different cache update functions is pretty gross.
+
 " debounces the cache update so we can use it on things like CursorMovedI.
 " will update the cache 2 seconds after the last time this was called.
 function! recentcomplete#update_cache_eventually() abort
   RCPython recentcomplete.update_cache_eventually()
 endfunction
 
-" Updates the cache immediately, though in a background thread.
+" Updates the cache asap, though in a background thread.
 function! recentcomplete#update_cache() abort
+  RCPython recentcomplete.update_cache()
+endfunction
+
+" Updates the cache immediately and synchronously
+function! recentcomplete#update_cache_now() abort
   RCPython recentcomplete.update_cache()
 endfunction
 

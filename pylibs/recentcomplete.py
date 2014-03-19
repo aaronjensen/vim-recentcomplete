@@ -13,10 +13,10 @@ def debounce(wait):
     def decorator(fn):
         def debounced(*args, **kwargs):
             def call_it():
-                debounce.timers.remove(debounced.t)
+                #debounce.timers.remove(debounced.t)
                 fn(*args, **kwargs)
             try:
-                debounce.timers.remove(debounced.t)
+                #debounce.timers.remove(debounced.t)
                 debounced.t.cancel()
             except(AttributeError):
                 pass
@@ -46,14 +46,17 @@ def one_at_a_time():
 # Functions called from vim
 @debounce(2)
 def update_cache_eventually():
-    update_cache()
+    update_cache_now()
 
 
-cache = []
 @debounce(0)
-@one_at_a_time()
 def update_cache():
-    cache = _run_commands(cacheable_commands)
+    update_cache_now()
+
+
+@one_at_a_time()
+def update_cache_now():
+    cache.cache = _run_commands(cacheable_commands)
 
 
 pool = ThreadPool(processes=4)
@@ -77,10 +80,16 @@ def clear_timers():
 
 
 def get_cache():
-    vim.command('return [%s]' % ','.join(cache))
+    vim.command('return [%s]' % ','.join(cache()))
 
 
 # Support functions
+def cache():
+    return cache.cache
+
+cache.cache = []
+
+
 def _run_commands(commands):
     results = pool.map(get_output, commands)
     return [vim_str(result) for result in results]
