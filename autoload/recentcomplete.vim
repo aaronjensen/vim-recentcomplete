@@ -1,6 +1,7 @@
 let s:max_buffer_size = 200000
 let s:max_untracked_files = 10
 
+" TODO: Get rid of this and move buffer_keywords to python
 function! s:git_diff(args, ...)
   let extra = ''
   if a:0 > 0
@@ -9,6 +10,7 @@ function! s:git_diff(args, ...)
   return " git diff --diff-filter=AM --no-color " . a:args ." 2>/dev/null"
         \. " | grep \\^+\s*.. 2>/dev/null"
         \. " | grep -v '+++ [ab]/' 2>/dev/null"
+        \. " | sed 's/^+//' 2>/dev/null"
         \. extra
         \. " || true"
 endfunction
@@ -30,10 +32,7 @@ function! s:find_start()
 endfunction
 
 function! s:extract_keywords_from_diff(diff)
-  let lines = filter(split(a:diff, "\n"), 'v:val =~# ''^+\(++ [ab]\)\@!''')
-  let lines = map(lines, 'strpart(v:val, 1)')
-
-  return split(substitute(join(lines), '\k\@!.', ' ', 'g'))
+  return split(substitute(a:diff, '\k\@!.', ' ', 'g'))
 endfunction
 
 function! s:shellescape(str)
@@ -51,39 +50,14 @@ function! s:buffer_keywords()
   return "echo '".s:shellescape(buffer)."' | ".s:git_diff('--no-index -- '.base.' -')
 endfunction
 
-function! s:untracked_keywords()
-  return 'git ls-files --others --exclude-standard 2>/dev/null | head -'
-        \. s:max_untracked_files
-        \. ' | xargs -I % '.s:git_diff('--no-index /dev/null %')
-endfunction
-
-function! s:uncommitted_keywords()
-  return s:git_diff('HEAD')
-endfunction
-
-function! s:recently_committed_keywords()
-  return s:git_diff("@'{1.hour.ago}' HEAD", "| sed '1!G;h;$!d' 2>/dev/null")
-endfunction
-
-function! s:run_commands_in_parallel(commands) abort
-  let outputs = s:py_run_commands(a:commands)
-
-  let keywords = []
-  for output in outputs
-    let keywords += s:extract_keywords_from_diff(output)
-  endfor
-  return keywords
-endfunction
-
 function! s:matches(keyword_base) abort
   let commands = [
         \   s:buffer_keywords(),
-        \   s:untracked_keywords(),
-        \   s:uncommitted_keywords(),
-        \   s:recently_committed_keywords(),
         \ ]
 
-  let keywords = s:run_commands_in_parallel(commands)
+  let output = s:py_run_commands(commands)
+  let output += s:py_get_cache()
+  let keywords = s:extract_keywords_from_diff(join(output))
 
   let base = escape(a:keyword_base, '\\/.*$^~[]')
   let result = filter(keywords, "v:val =~# '^".base."'")
@@ -91,13 +65,15 @@ function! s:matches(keyword_base) abort
   return result
 endfunction
 
+function! s:py_get_cache() abort
+  RCPython recentcomplete.get_cache()
+endfunction
+
 function! s:py_run_command(command) abort
-  RCPython import recentcomplete
   RCPython recentcomplete.run_command()
 endfunction
 
 function! s:py_run_commands(commands) abort
-  RCPython import recentcomplete
   RCPython recentcomplete.run_commands()
 endfunction
 
@@ -107,6 +83,28 @@ function! recentcomplete#matches(find_start, keyword_base) abort
   else
     return s:matches(a:keyword_base)
   endif
+endfunction
+
+" XXX: Too many different cache update functions is pretty gross.
+
+" debounces the cache update so we can use it on things like CursorMovedI.
+" will update the cache 2 seconds after the last time this was called.
+function! recentcomplete#update_cache_eventually() abort
+  RCPython recentcomplete.update_cache_eventually()
+endfunction
+
+" Updates the cache asap, though in a background thread.
+function! recentcomplete#update_cache() abort
+  RCPython recentcomplete.update_cache()
+endfunction
+
+" Updates the cache immediately and synchronously
+function! recentcomplete#update_cache_now() abort
+  RCPython recentcomplete.update_cache()
+endfunction
+
+function! recentcomplete#on_quit() abort
+  RCPython recentcomplete.clear_timers()
 endfunction
 
 if has('python')
@@ -120,6 +118,7 @@ end
 RCPython << PYTHON
 import sys, os, vim
 sys.path.insert(0, os.path.join(vim.eval("expand('<sfile>:p:h:h')"), 'pylibs'))
+import recentcomplete
 PYTHON
 
 call s:py_run_commands(['ls', 'echo hi'])

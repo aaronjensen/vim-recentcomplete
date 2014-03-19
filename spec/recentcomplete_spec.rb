@@ -30,6 +30,7 @@ describe "recentcomplete#matches without git" do
     vim.write
 
     vim.insert("world")
+    vim.command 'call recentcomplete#update_cache_now()'
 
     expect(matches(0, "")).to eq(words(%w[world]))
   end
@@ -61,6 +62,7 @@ describe "recentcomplete#matches" do
         fantasy
     EOF
     vim.edit 'foo.rb'
+    vim.command 'call recentcomplete#update_cache_now()'
 
     expect(matches(0, "")).to eq(words %w[unicorn fantasy])
   end
@@ -74,6 +76,7 @@ describe "recentcomplete#matches" do
     git :commit, "-am", "commit"
 
     vim.edit 'foo.rb'
+    vim.command 'call recentcomplete#update_cache_now()'
 
     expect(matches(0, "")).to eq(words %w[kingdom magic])
   end
@@ -93,6 +96,7 @@ describe "recentcomplete#matches" do
     EOF
 
     vim.edit 'foo.rb'
+    vim.command 'call recentcomplete#update_cache_now()'
 
     expect(matches(0, "")).to eq(words %w[disneyland])
   end
@@ -106,6 +110,7 @@ describe "recentcomplete#matches" do
     git :commit, "-am", "commit", date: long_past
 
     vim.edit 'foo.rb'
+    vim.command 'call recentcomplete#update_cache_now()'
 
     expect(matches(0, "")).to eq(words %w[])
   end
