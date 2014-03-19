@@ -116,6 +116,10 @@ function! recentcomplete#update_cache() abort
   RCPython recentcomplete.update_cache()
 endfunction
 
+function! recentcomplete#on_quit() abort
+  RCPython recentcomplete.clear_timers()
+endfunction
+
 if has('python')
   command! -nargs=1 RCPython python <args>
 elseif has('python3')

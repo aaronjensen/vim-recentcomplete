@@ -13,27 +13,32 @@ def debounce(wait):
     def decorator(fn):
         def debounced(*args, **kwargs):
             def call_it():
+                debounce.timers.remove(debounced.t)
                 fn(*args, **kwargs)
             try:
+                debounce.timers.remove(debounced.t)
                 debounced.t.cancel()
             except(AttributeError):
                 pass
             debounced.t = threading.Timer(wait, call_it)
+            debounce.timers.append(debounced.t)
             debounced.t.start()
         return debounced
     return decorator
 
+debounce.timers = []
+
 
 def one_at_a_time():
     def decorator(fn):
-        lock = threading.Lock()
+        decorator.lock = threading.Lock()
 
         def onced(*args, **kwargs):
-            if lock.acquire(False):
+            if decorator.lock.acquire(False):
                 try:
                     fn(*args, **kwargs)
                 finally:
-                    lock.release()
+                    decorator.lock.release()
         return onced
     return decorator
 
@@ -64,6 +69,11 @@ def run_command():
     command = vim.eval("a:command")
     output = get_output(command)
     vim.command('return %s' % vim_str(output))
+
+
+def clear_timers():
+    while debounce.timers:
+        debounce.timers.pop().cancel()
 
 
 # Support functions
