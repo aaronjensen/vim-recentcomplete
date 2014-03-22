@@ -58,7 +58,7 @@ def update_cache():
 
 @one_at_a_time()
 def update_cache_now():
-    cache.cache = _run_commands(cacheable_commands)
+    cache.cache = vim_str('\n'.join(_run_commands(cacheable_commands)))
 
 
 pool = ThreadPool(processes=4)
@@ -82,7 +82,7 @@ def clear_timers():
 
 
 def get_cache():
-    vim.command('return [%s]' % ','.join(cache()))
+    vim.command('return %s' % cache())
 
 
 # Support functions

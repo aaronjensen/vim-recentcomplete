@@ -55,9 +55,9 @@ function! s:matches(keyword_base) abort
         \   s:buffer_keywords(),
         \ ]
 
-  let output = s:py_run_commands(commands)
-  let output += s:py_get_cache()
-  let keywords = s:extract_keywords_from_diff(join(output))
+  let output = join(s:py_run_commands(commands))
+  let output .= s:py_get_cache()
+  let keywords = s:extract_keywords_from_diff(output)
 
   let base = escape(a:keyword_base, '\\/.*$^~[]')
   let result = filter(keywords, "v:val =~# '^".base."'")
