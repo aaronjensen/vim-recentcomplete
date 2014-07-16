@@ -58,6 +58,10 @@ def update_cache():
 
 @one_at_a_time()
 def update_cache_now():
+    if subprocess.call("[ -d .git ] || git rev-parse --git-dir > /dev/null 2>&1", shell=True) != 0:
+        cache.cache = vim_str('')
+        return
+
     cache.cache = vim_str('\n'.join(_run_commands(cacheable_commands)))
 
 
