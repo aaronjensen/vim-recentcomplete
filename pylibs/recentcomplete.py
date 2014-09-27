@@ -5,6 +5,15 @@ import os
 import threading
 from multiprocessing.pool import ThreadPool
 
+# Vim helpers
+def vim_str(text):
+    return "'%s'" % text.replace("'", "''")
+
+
+def echom(text):
+    vim.command("echom %s" % vim_str(text))
+
+
 # Decorators
 def debounce(wait):
     """ Decorator that will postpone a functions
@@ -93,7 +102,7 @@ def get_cache():
 def cache():
     return cache.cache
 
-cache.cache = []
+cache.cache = vim_str('')
 
 
 def _run_commands(commands):
@@ -133,11 +142,3 @@ cacheable_commands = [
         uncommitted_keywords(),
         recently_committed_keywords(),
         ]
-
-# Vim helpers
-def vim_str(text):
-    return "'%s'" % text.replace("'", "''")
-
-
-def echom(text):
-    vim.command("echom %s" % vim_str(text))
