@@ -71,7 +71,7 @@ def update_cache_now():
         cache.cache = vim_str('')
         return
 
-    cache.cache = vim_str('\n'.join(_run_commands(cacheable_commands)))
+    cache.cache = vim_str('\n'.join(_run_commands(cacheable_commands))[:20000])
 
 
 pool = ThreadPool(processes=4)
@@ -107,7 +107,7 @@ cache.cache = vim_str('')
 
 def _run_commands(commands):
     results = pool.map(get_output, commands)
-    return [vim_str(result) for result in results]
+    return [vim_str(result[:5000]) for result in results]
 
 
 def get_output(command):
