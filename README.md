@@ -2,6 +2,8 @@
 
 Uses recent git changes to populate autocomplete.
 
+![example](http://screenshots-dx37.s3.amazonaws.com/monosnap/01Vim_-_vim_2014-10-11_17-12-43.png)
+
 ### Use with
 
 * [neocomplete](https://github.com/Shougo/neocomplete.vim)--just install it, it
