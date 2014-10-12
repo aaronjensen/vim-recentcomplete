@@ -12,7 +12,7 @@ let s:source = {
    \ }
 
 function! s:source.gather_candidates(context)
-  let result = recentcomplete#matches(0, '')
+  let result = recentcomplete#matches(0, a:context.complete_str[0])
   call map(result, "{ 'word': v:val.word, 'menu': '[R]' }")
   return result
 endfunction
