@@ -4,10 +4,18 @@ Uses recent git changes to populate autocomplete.
 
 ### Use with
 
+* [neocomplete](https://github.com/Shougo/neocomplete.vim)--just install it, it
+  works out of the box.
+
+#### OR
+
 * My fork of [vim-autocomplpop](https://github.com/aaronjensen/vim-autocomplpop)
+
+### Handy with
+
 * [vim-localcomplete](https://github.com/dirkwallenstein/vim-localcomplete)
 
-### Example configuration
+### Example configuration for autocomplpop
 
 This is my configuration from my [vimfiles](https://github.com/aaronjensen/vimfiles).
 It is primarily set up for ruby and sass but can be customized to anything.
