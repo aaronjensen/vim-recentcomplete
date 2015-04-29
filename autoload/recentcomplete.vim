@@ -47,7 +47,7 @@ function! s:buffer_keywords()
 
   let buffer = strpart(s:buffer_contents(), 0, s:max_buffer_size)
 
-  return "[ -d .git ] && echo '".s:shellescape(buffer)."' | ".s:git_diff('--no-index -- '.base.' -')
+  return "echo '".s:shellescape(buffer)."' | ".s:git_diff('--no-index -- '.base.' -')
 endfunction
 
 function! s:matches(keyword_base) abort
