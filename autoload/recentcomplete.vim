@@ -120,5 +120,3 @@ import sys, os, vim
 sys.path.insert(0, os.path.join(vim.eval("expand('<sfile>:p:h:h')"), 'pylibs'))
 import recentcomplete
 PYTHON
-
-call s:py_run_commands(['ls', 'echo hi'])
