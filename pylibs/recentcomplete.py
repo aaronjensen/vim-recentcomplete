@@ -135,7 +135,7 @@ def uncommitted_keywords():
 
 
 def recently_committed_keywords():
-    return git_diff("$(git log -1 --before=\"1 hour ago\" --format=%H) HEAD", "| sed '1!G;h;$!d' 2>/dev/null")
+    return git_diff("$(git log -1 --before=\"1 hour ago\" --format=%H 2>/dev/null) HEAD", "| sed '1!G;h;$!d' 2>/dev/null")
 
 cacheable_commands = [
         untracked_keywords(),
