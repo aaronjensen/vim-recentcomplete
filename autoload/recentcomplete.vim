@@ -100,7 +100,7 @@ endfunction
 
 " Updates the cache immediately and synchronously
 function! recentcomplete#update_cache_now() abort
-  RCPython recentcomplete.update_cache()
+  RCPython recentcomplete.update_cache_now()
 endfunction
 
 function! recentcomplete#on_quit() abort
