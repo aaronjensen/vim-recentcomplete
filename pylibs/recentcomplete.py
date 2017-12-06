@@ -7,8 +7,14 @@ from multiprocessing.pool import ThreadPool
 
 # Vim helpers
 def vim_str(text):
-    return "'%s'" % text.replace("'", "''")
+    if isinstance(text, str):
+        return escape_vim_str(text)
+    else:
+        string = text.decode('UTF-8', 'ignore')
+        return escape_vim_str(string)
 
+def escape_vim_str(text):
+    return "'%s'" % text.replace("'", "''")
 
 def echom(text):
     vim.command("echom %s" % vim_str(text))
